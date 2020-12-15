@@ -48,6 +48,7 @@ class SwiftParser:
                 'beforeEach',
                 'describe(',
                 'context(',
+                'sharedExamples(',
                 'it(',
                 'class ',
                 'final class '
@@ -56,13 +57,24 @@ class SwiftParser:
                 line.strip().startswith(x)
                 for x in quick_funcs
             ]
-            is_start_of_node = '{' in line and '}' not in line and True in quick_funcs
+            is_start_of_node = True in quick_funcs
 
             if is_start_of_node:
-                n, n_length = self.parse_node(line, lines[idx + 1:])
+                if line.count('{') == line.count('}'):
+                    # it is oneliner
+                    subnodes.append(Node(
+                        start=line,
+                        content=[re.search(r'\{(.+)\}', line).group(1).strip()],
+                        subnodes=[]
+                    ))
+                else:
+                    n, n_length = self.parse_node(line, lines[idx + 1:])
 
-                idx += n_length + 1
-                subnodes.append(n)
+                    if 'sharedExample' in n.start:
+                        print()
+
+                    idx += n_length + 1
+                    subnodes.append(n)
             else:
                 open_count += line.count('{')
                 close_count += line.count('}')
@@ -83,24 +95,33 @@ def strip_array(arr: [str]):
 
 class QuickParser:
     class TestCase:
-        def __init__(self, naming: [str], content: [str], before_each: [str], vars: [str]):
+        def __init__(self,
+                     naming: [str],
+                     content: [str],
+                     before_each: [str],
+                     vars: [str]):
             self.naming = naming
             self.content = content
             self.before_each = before_each
             self.vars = vars
+            self.shared_example_name = None
+
+            shared_examples_match = next((x for x in naming if 'sharedExamples(' in x), None)
+            if shared_examples_match:
+                self.shared_example_name = re.search(r'sharedExamples\("(.*?)"\)', shared_examples_match).group(1)
 
     def __init__(self, text: str, root_node: Node, extensions: [str]):
         self.text = text
         self.extensions = extensions
         self.common_setup = []
         self.common_vars = []
+        self.test_cases: list[QuickParser.TestCase] = []
 
         # self.imports = re.findall(r'import (\w+)', text, flags=re.MULTILINE)
         self.class_name = re.findall(r'class (\w+): QuickSpec \{', text, flags=re.MULTILINE)[0].replace('Spec', 'Tests')
 
         self.root_node = root_node
 
-        self.test_cases: list[QuickParser.TestCase] = []
 
         self.process_node(root_node)
 
@@ -132,7 +153,7 @@ class QuickParser:
                      context_vars=[],
                      level=0):
         my_naming = context_naming + [node.start]
-        my_content = context_content + node.content
+        my_content = list(context_content)
         my_before_each = list(context_before_each)
         my_vars = list(context_vars)
 
@@ -141,16 +162,23 @@ class QuickParser:
                 my_vars.append(line)
 
         for n in node.subnodes:
-            if 'beforeEach {' == n.start.strip():
+            if n.start.strip().startswith('beforeEach {'):
                 if level <= 3:
                     my_before_each += n.content
                 else:
                     my_content += n.content
 
+        my_content += node.content
+
+        for n in node.subnodes:
             self.process_node(n, my_content, my_naming, my_before_each, my_vars, level + 1)
 
-        it_name = re.findall(r'it\("(.+)"\)', node.start)
-        if len(it_name) == 1:
+        convert_to_test_case = node.start.strip().startswith('it(')
+
+        if next((x for x in node.content if x.strip().startswith('itBehavesLike(')), None):
+            convert_to_test_case = True
+
+        if convert_to_test_case:
             result = QuickParser.TestCase(naming=my_naming,
                                           content=my_content,
                                           before_each=my_before_each,
@@ -339,16 +367,18 @@ class XCTestGenerator:
 
             naming_raw = ' '.join(naming).title()
 
+            func_name = 'test' if test.shared_example_name is None else test.shared_example_name + '_'
+
             allowed_characters = string.digits + string.ascii_letters
             test_name = ''.join([x for x in naming_raw if x in allowed_characters])
-            func_name = 'test' + test_name
+            func_name += test_name
 
             if len(func_name) >= 100:
                 naming_raw = ' _ '.join(naming)
                 naming_raw = naming_raw.title()
                 allowed_characters += '_'
                 test_name = ''.join([x for x in naming_raw if x in allowed_characters])
-                func_name = 'test' + test_name
+                func_name += test_name
 
             duplicate_detected = False
             while func_name in used_test_names:

@@ -218,6 +218,15 @@ class XCTestGenerator:
             line = re.sub(r'expect\((.+?)\).to\(beNil\(\)\)', r'XCTAssertNil(\g<1>)', line)
             line = re.sub(r'expect\((.+?)\).(?:notTo|toNot)\(beNil\(\)\)', r'XCTAssertNotNil(\g<1>)', line)
             line = re.sub(r'expect\((.+?)\).to\(beAKindOf\((.+?)\.self\)\)', r'XCTAssertTrue(\g<1> is \g<2>)', line)
+
+            line = re.sub(r'expect\(expression:\s*(.+?)\s*\)\.to\(throwError\((.+)\)\)',
+                          r'customAssertThrowsError(expression: \g<1>, expectedError: \g<2>)', line)
+
+            line = re.sub(r'expect\(expression:\s*(.+?)\s*\)\.to\(throwError\(\)\)',
+                          r'customAssertThrowsError(expression: \g<1>)', line)
+
+            line = re.sub(r'expect\(expression:\s*(.+?)\s*\)\.(?:toNot|notTo)\(throwError\(\)\)',
+                          r'customAssertNoThrow(expression: \g<1>)', line)
             return line
 
         def join_declarations_and_assignments(lines):
@@ -452,3 +461,6 @@ unwrap_all_files()
 convert_all_files()
 
 # convert_quick(str('unwrapped/example.swift'), out_dir='out')
+
+print("!!! Check file `CustomThrowingAssertFunctions.swift` for definitions of"
+      "\n\t`customAssertThrowsError`\n\t`customAssertNoThrow`")

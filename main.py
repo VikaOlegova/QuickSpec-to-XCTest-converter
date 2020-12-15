@@ -227,7 +227,45 @@ class XCTestGenerator:
 
             line = re.sub(r'expect\(expression:\s*(.+?)\s*\)\.(?:toNot|notTo)\(throwError\(\)\)',
                           r'customAssertNoThrow(expression: \g<1>)', line)
+
             return line
+
+        def convert_wait_until(lines):
+            # text = '\n'.join(lines)
+
+            content = []
+            start = None
+            curly = 1
+            timeout = None
+
+            result_lines = []
+
+            found = False
+            for idx, line in enumerate(lines):
+                if 'waitUntil' in line:
+                    match = re.search(r'waitUntil(?:\(timeout:(.+)\))? \{', line)
+                    timeout = match.group(1)
+
+                    found = True
+                    start = idx
+                    curly = 1
+                    result_lines.append('let exp = expectation(description: "")')
+                elif start is not None:
+                    curly += line.count('{') - line.count('}')
+
+                    if curly == 0:
+                        start = None
+                        timeout = timeout.strip() if timeout else '0.5'
+                        result_lines.append(f'wait(for: [exp], timeout: {timeout})')
+                        timeout = None
+                    else:
+                        content.append(line)
+                        result_lines.append(line.replace('done()', 'exp.fulfill()'))
+
+                else:
+                    result_lines.append(line)
+
+            return result_lines
 
         def join_declarations_and_assignments(lines):
             class VAR:
@@ -284,6 +322,7 @@ class XCTestGenerator:
         body_lines = join_declarations_and_assignments(body_lines)
         body_lines = fix_xctfail(body_lines)
         body_lines = [convert_expectations(x) for x in body_lines]
+        body_lines = convert_wait_until(body_lines)
 
         def generate_test_name():
             naming = []

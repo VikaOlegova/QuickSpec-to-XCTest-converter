@@ -330,7 +330,13 @@ class XCTestGenerator:
 
             if last_testable_call_idx is not None:
                 lines.insert(last_testable_call_idx, '\n// act')
-                lines.insert(last_testable_call_idx + 2, '\n// assert')
+
+                line_before_assert = lines[last_testable_call_idx + 1]
+                assert_comment = '// assert' \
+                    if line_before_assert.count('{') > line_before_assert.count('}') \
+                    else '\n// assert'
+
+                lines.insert(last_testable_call_idx + 2, assert_comment)
             else:
                 first_assert_idx = next((i for i, v in enumerate(lines) if 'Assert' in v), None)
                 if first_assert_idx:

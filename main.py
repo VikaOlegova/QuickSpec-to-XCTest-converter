@@ -4,6 +4,7 @@ from subprocess import Popen, PIPE
 from pathlib import Path
 import shutil
 import string
+import sys
 
 
 def write_file(filename, text):
@@ -536,10 +537,20 @@ def convert_all_files(src_dir, out_dir):
         convert_quick(str(path), out_file=out_file)
 
 
-work_dir = '/Users/../projects/PROJ/PROJTests'
+def print_usage_and_exit():
+    print('Usage: python3 main.py <folder with quickspec tests>')
+    exit(1)
+
+
+if len(sys.argv) != 2:
+    print_usage_and_exit()
+
+work_dir = sys.argv[1]
 unwrapped_dir = work_dir
 
-# rm_dir(unwrapped_dir)
+if not os.path.isdir(work_dir):
+    print(f'Error: "{work_dir}" is not directory.')
+    print_usage_and_exit()
 
 backup_originals(src_dir=work_dir, out_dir=os.path.join(work_dir, 'backup'))
 

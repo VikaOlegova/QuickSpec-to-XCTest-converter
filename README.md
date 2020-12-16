@@ -2,8 +2,11 @@
 
 # Installation
 
-1) Copy repo
-1) Install **swiftformat**
+1) Clone repo
+```bash
+$ git clone https://github.com/VikaOlegova/QuickSpec-to-XCTest-converter
+```
+2) Install **swiftformat**
 ```bash
 $ brew install swiftformat
 ```

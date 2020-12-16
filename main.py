@@ -480,7 +480,7 @@ def convert_quick(filename, out_file):
 
 
 def run_swiftformat(swift_file):
-    process = Popen(['swiftformat', swift_file], stdout=PIPE, stderr=PIPE)
+    process = Popen(['swiftformat', swift_file, '--config', '.swiftformat'], stdout=PIPE, stderr=PIPE)
     stdout, stderr = process.communicate()
 
     stdout = stdout.decode('utf-8')
@@ -515,13 +515,23 @@ def rm_dir(dir):
         pass
 
 
+def backup_originals(src_dir, out_dir):
+    for path in list(Path(src_dir).rglob('*.swift')):
+        filename = str(path)
+        with open(filename, 'r', encoding='utf-8') as file:
+            text = file.read()
+
+        if 'QuickSpec' in text:
+            write_file(filename=filename.replace(src_dir, out_dir), text=text)
+
+
 def unwrap_all_files(src_dir, out_dir):
-    for path in Path(src_dir).rglob('*.swift'):
+    for path in list(Path(src_dir).rglob('*.swift')):
         remove_line_wraps(path, str(path).replace(src_dir, out_dir))
 
 
 def convert_all_files(src_dir, out_dir):
-    for path in Path(src_dir).rglob('*.swift'):
+    for path in list(Path(src_dir).rglob('*.swift')):
         out_file = str(path).replace(src_dir, out_dir)
         convert_quick(str(path), out_file=out_file)
 
@@ -530,6 +540,8 @@ work_dir = '/Users/../projects/PROJ/PROJTests'
 unwrapped_dir = work_dir
 
 # rm_dir(unwrapped_dir)
+
+backup_originals(src_dir=work_dir, out_dir=os.path.join(work_dir, 'backup'))
 
 unwrap_all_files(src_dir=work_dir, out_dir=unwrapped_dir)
 convert_all_files(src_dir=unwrapped_dir, out_dir=work_dir)

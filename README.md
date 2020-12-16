@@ -7,6 +7,8 @@
 
 # Usage
 
-1) Put some QuickSpec tests to folder `src`
+1) Change path to your tests folder in `main.py`
+
+    `work_dir = '/Users/../projects/PROJ/PROJTests'`
 2) Run `python3 main.py`
-3) Check converted files in folder `out`
+3) PROFIT

@@ -459,16 +459,21 @@ class XCTestGenerator:
         return xctest
 
 
-def convert_quick(filename, out_dir):
+def convert_quick(filename, out_file):
     with open(filename, 'r', encoding='utf-8') as file:
         text = file.read()
+
+    if 'QuickSpec' not in text:
+        print(f"Skipped file without QuickSpec: {filename}")
+        return
+
+    print(f'==== Processing {filename} ====')
 
     swift_parser = SwiftParser(text)
     parser = QuickParser(text, swift_parser.root, swift_parser.extensions)
 
     test = XCTestGenerator(parser).generate()
 
-    out_file = filename.replace('unwrapped/', 'out/')
     write_file(out_file, test)
 
     run_swiftformat(out_file)
@@ -488,6 +493,10 @@ def remove_line_wraps(filename, out_file):
     with open(filename, 'r', encoding='utf-8') as file:
         text = file.read()
 
+    if 'QuickSpec' not in text:
+        print(f"Skipped file without QuickSpec: {filename}")
+        return
+
     index = text.index(': QuickSpec {')
     first = text[:index]
     second = text[index:]
@@ -499,35 +508,31 @@ def remove_line_wraps(filename, out_file):
     write_file(out_file, first + second)
 
 
-def unwrap_all_files():
+def rm_dir(dir):
     try:
-        shutil.rmtree('unwrapped')
+        shutil.rmtree(dir)
     except FileNotFoundError:
         pass
 
-    for path in Path('src').rglob('*.swift'):
-        with open(str(path), 'r', encoding='utf-8') as file:
-            text = file.read()
-            if 'QuickSpec' not in text:
-                print(f"Skipped file without QuickSpec: {path}")
-                continue
 
-        remove_line_wraps(path, str(path).replace('src', 'unwrapped'))
+def unwrap_all_files(src_dir, out_dir):
+    for path in Path(src_dir).rglob('*.swift'):
+        remove_line_wraps(path, str(path).replace(src_dir, out_dir))
 
 
-def convert_all_files():
-    try:
-        shutil.rmtree('out')
-    except FileNotFoundError:
-        pass
-
-    for path in Path('unwrapped').rglob('*.swift'):
-        print(f'==== Processing {path} ====')
-        convert_quick(str(path), out_dir='out')
+def convert_all_files(src_dir, out_dir):
+    for path in Path(src_dir).rglob('*.swift'):
+        out_file = str(path).replace(src_dir, out_dir)
+        convert_quick(str(path), out_file=out_file)
 
 
-unwrap_all_files()
-convert_all_files()
+work_dir = '/Users/../projects/PROJ/PROJTests'
+unwrapped_dir = work_dir
+
+# rm_dir(unwrapped_dir)
+
+unwrap_all_files(src_dir=work_dir, out_dir=unwrapped_dir)
+convert_all_files(src_dir=unwrapped_dir, out_dir=work_dir)
 
 # convert_quick(str('unwrapped/example.swift'), out_dir='out')
 

@@ -19,6 +19,7 @@ $ brew install swiftformat
 
 # Notes
 
-* Folder `{work_dir}/backup` will contain original files which were converted
 * Search for `*.swift` files is done recursively inside all folders in the `work_dir`
+* Script will skip any file which doesn't containt string `QuickSpec`
+* Folder `{work_dir}/backup` will contain original files which were converted
 * Check file [CustomThrowingAssertFunctions.swift](/CustomThrowingAssertFunctions.swift) for definitions of `customAssertThrowsError` and `customAssertNoThrow`

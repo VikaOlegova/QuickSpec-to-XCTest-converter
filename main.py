@@ -524,6 +524,9 @@ def replace_path_dir(path, old, new):
 def backup_originals(src_dir, out_dir):
     for path in list(Path(src_dir).rglob('*.swift')):
         filename = str(path)
+        if '/backup/' in str(path):
+            continue
+
         with open(filename, 'r', encoding='utf-8') as file:
             text = file.read()
 
@@ -533,7 +536,8 @@ def backup_originals(src_dir, out_dir):
 
 def unwrap_all_files(src_dir, out_dir):
     for path in list(Path(src_dir).rglob('*.swift')):
-        remove_line_wraps(path, replace_path_dir(path, src_dir, out_dir))
+        if '/backup/' not in str(path):
+            remove_line_wraps(path, replace_path_dir(path, src_dir, out_dir))
 
 
 def convert_all_files(src_dir, out_dir):

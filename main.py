@@ -123,7 +123,6 @@ class QuickParser:
 
         self.root_node = root_node
 
-
         self.process_node(root_node)
 
         self.strip_all()
@@ -516,6 +515,12 @@ def rm_dir(dir):
         pass
 
 
+def replace_path_dir(path, old, new):
+    _old = re.sub(r'/$', r'', old)
+    _new = re.sub(r'/$', r'', new)
+    return str(path).replace(_old, _new)
+
+
 def backup_originals(src_dir, out_dir):
     for path in list(Path(src_dir).rglob('*.swift')):
         filename = str(path)
@@ -523,18 +528,19 @@ def backup_originals(src_dir, out_dir):
             text = file.read()
 
         if 'QuickSpec' in text:
-            write_file(filename=filename.replace(src_dir, out_dir), text=text)
+            write_file(filename=replace_path_dir(filename, src_dir, out_dir), text=text)
 
 
 def unwrap_all_files(src_dir, out_dir):
     for path in list(Path(src_dir).rglob('*.swift')):
-        remove_line_wraps(path, str(path).replace(src_dir, out_dir))
+        remove_line_wraps(path, replace_path_dir(path, src_dir, out_dir))
 
 
 def convert_all_files(src_dir, out_dir):
     for path in list(Path(src_dir).rglob('*.swift')):
-        out_file = str(path).replace(src_dir, out_dir)
-        convert_quick(str(path), out_file=out_file)
+        if '/backup/' not in str(path):
+            out_file = replace_path_dir(path, src_dir, out_dir)
+            convert_quick(str(path), out_file=out_file)
 
 
 def print_usage_and_exit():

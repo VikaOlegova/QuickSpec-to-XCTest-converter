@@ -8,7 +8,10 @@ import sys
 
 
 def write_file(filename, text):
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    dir = os.path.dirname(filename)
+    if dir != '':
+        os.makedirs(dir, exist_ok=True)
+
     with open(filename, 'w', encoding='utf-8') as f:
         f.write(text)
 

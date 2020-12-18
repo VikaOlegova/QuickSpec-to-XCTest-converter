@@ -419,7 +419,7 @@ class XCTestGenerator:
                 lines.insert(last_testable_call_idx + 2, assert_comment)
             else:
                 first_assert_idx = next((i for i, v in enumerate(lines) if 'Assert' in v), None)
-                if first_assert_idx:
+                if first_assert_idx is not None:
                     lines.insert(first_assert_idx, '\n// assert')
 
             if lines[0] != '\n// act':

@@ -404,12 +404,14 @@ class XCTestGenerator:
             lines = [x for x in lines if x != '']
 
             last_testable_call_idx = None
+            act_inserted = False
             for idx, line in enumerate(lines):
                 if re.search(rf'\W?{testable_name}\W', line) and 'Assert' not in line:
                     last_testable_call_idx = idx
 
             if last_testable_call_idx is not None:
                 lines.insert(last_testable_call_idx, '\n// act')
+                act_inserted = True
 
                 line_before_assert = lines[last_testable_call_idx + 1]
                 assert_comment = '// assert' \
@@ -422,8 +424,14 @@ class XCTestGenerator:
                 if first_assert_idx is not None:
                     lines.insert(first_assert_idx, '\n// assert')
 
-            if lines[0] != '\n// act':
+            if not lines[0].strip().startswith('//'):
                 lines.insert(0, '// arrange')
+
+            if not act_inserted:
+                lines = [
+                    x.replace('// assert', '// act & assert')
+                    for x in lines
+                ]
 
             return '\n'.join(lines)
 

@@ -374,14 +374,13 @@ class XCTestGenerator:
 
             allowed_characters = string.digits + string.ascii_letters
             test_name = ''.join([x for x in naming_raw if x in allowed_characters])
-            func_name += test_name
 
-            if len(func_name) >= 100:
-                naming_raw = ' _ '.join(naming)
-                naming_raw = naming_raw.title()
+            if len(test_name) >= 100:
+                naming_raw = ' _ '.join(naming).title()
                 allowed_characters += '_'
                 test_name = ''.join([x for x in naming_raw if x in allowed_characters])
-                func_name += test_name
+
+            func_name += test_name
 
             duplicate_detected = False
             while func_name in used_test_names:
